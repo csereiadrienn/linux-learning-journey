@@ -1,1 +1,472 @@
+# Linux Troubleshooting
 
+This file contains common Linux troubleshooting workflows useful for RHCSA and real-world system administration.
+
+## 1. General Troubleshooting Philosophy
+
+Basic troubleshooting flow:
+
+```text
+1. Identify problem
+2. Check service
+3. Check logs
+4. Check ports
+5. Check firewall
+6. Check SELinux
+7. Test connectivity
+8. Verify configuration
+```
+
+Never guess.
+Always verify step by step.
+
+## 2. Service Troubleshooting
+
+Check service status:
+
+```bash
+systemctl status httpd
+```
+
+Restart service:
+
+```bash
+systemctl restart httpd
+```
+
+View service logs:
+
+```bash
+journalctl -u httpd
+```
+
+View recent logs:
+
+```bash
+journalctl -xe
+```
+
+List failed services:
+
+```bash
+systemctl --failed
+```
+
+## 3. Port Troubleshooting
+
+Check listening ports:
+
+```bash
+ss -tulpn
+```
+
+Check specific port:
+
+```bash
+ss -tulpn | grep :80
+```
+
+Common ports:
+
+```text
+22   SSH
+80   HTTP
+443  HTTPS
+53   DNS
+3306 MySQL
+```
+
+## 4. Firewall Troubleshooting
+
+Check firewall rules:
+
+```bash
+firewall-cmd --list-all
+```
+
+Open HTTP:
+
+```bash
+firewall-cmd --add-service=http --permanent
+```
+
+Reload firewall:
+
+```bash
+firewall-cmd --reload
+```
+
+## 5. SELinux Troubleshooting
+
+Check SELinux mode:
+
+```bash
+getenforce
+```
+
+Check contexts:
+
+```bash
+ls -Z
+```
+
+Check AVC denials:
+
+```bash
+ausearch -m AVC -ts recent
+```
+
+Restore contexts:
+
+```bash
+restorecon -Rv /var/www/html
+```
+
+Common issue:
+
+```text
+Service works in permissive mode but fails in enforcing mode.
+```
+
+Usually:
+- wrong context
+- wrong port type
+- missing boolean
+
+## 6. Network Troubleshooting
+
+Check interfaces:
+
+```bash
+ip a
+```
+
+Check routes:
+
+```bash
+ip route
+```
+
+Check connectivity:
+
+```bash
+ping 8.8.8.8
+```
+
+Check DNS:
+
+```bash
+dig google.com
+```
+
+Check hostname:
+
+```bash
+hostnamectl
+```
+
+## 7. DNS Troubleshooting
+
+Test DNS resolution:
+
+```bash
+dig google.com
+```
+
+Check configured DNS servers:
+
+```bash
+cat /etc/resolv.conf
+```
+
+Problem example:
+
+```text
+Can ping IP but cannot resolve domains.
+```
+
+Usually DNS issue.
+
+## 8. Disk Troubleshooting
+
+Check mounted filesystems:
+
+```bash
+df -h
+```
+
+Check disk usage:
+
+```bash
+du -sh /var/log
+```
+
+Check block devices:
+
+```bash
+lsblk
+```
+
+Check filesystem UUIDs:
+
+```bash
+blkid
+```
+
+## 9. Boot Troubleshooting
+
+Check boot logs:
+
+```bash
+journalctl -b
+```
+
+Previous boot:
+
+```bash
+journalctl -b -1
+```
+
+Emergency mode usually caused by:
+- broken fstab
+- missing disk
+- corrupted filesystem
+
+## 10. Cron Troubleshooting
+
+Check cron service:
+
+```bash
+systemctl status crond
+```
+
+View cron jobs:
+
+```bash
+crontab -l
+```
+
+Check script permissions:
+
+```bash
+ls -l /root/script.sh
+```
+
+Make executable:
+
+```bash
+chmod +x script.sh
+```
+
+## 11. Apache Troubleshooting
+
+Check service:
+
+```bash
+systemctl status httpd
+```
+
+Check syntax:
+
+```bash
+httpd -t
+```
+
+Check logs:
+
+```bash
+journalctl -u httpd
+```
+
+Check listening ports:
+
+```bash
+ss -tulpn | grep :80
+```
+
+Check firewall:
+
+```bash
+firewall-cmd --list-all
+```
+
+Check SELinux:
+
+```bash
+ausearch -m AVC -ts recent
+```
+
+## 12. SSH Troubleshooting
+
+Check SSH service:
+
+```bash
+systemctl status sshd
+```
+
+Check SSH port:
+
+```bash
+ss -tulpn | grep :22
+```
+
+Check firewall:
+
+```bash
+firewall-cmd --list-all
+```
+
+Check SELinux SSH ports:
+
+```bash
+semanage port -l | grep ssh
+```
+
+## 13. LVM Troubleshooting
+
+Check PVs:
+
+```bash
+pvs
+```
+
+Check VGs:
+
+```bash
+vgs
+```
+
+Check LVs:
+
+```bash
+lvs
+```
+
+Check mounts:
+
+```bash
+mount
+```
+
+## 14. Podman Troubleshooting
+
+Check running containers:
+
+```bash
+podman ps
+```
+
+Check logs:
+
+```bash
+podman logs container
+```
+
+Check ports:
+
+```bash
+ss -tulpn
+```
+
+Check SELinux:
+
+```bash
+ausearch -m AVC -ts recent
+```
+
+## 15. Important Troubleshooting Commands
+
+```bash
+journalctl -xe
+systemctl status
+ss -tulpn
+ip a
+firewall-cmd --list-all
+ausearch -m AVC -ts recent
+df -h
+lsblk
+```
+
+## 16. Real Troubleshooting Workflow Example
+
+Problem:
+
+```text
+Website does not open.
+```
+
+Step 1:
+
+```bash
+systemctl status httpd
+```
+
+Step 2:
+
+```bash
+httpd -t
+```
+
+Step 3:
+
+```bash
+ss -tulpn | grep :80
+```
+
+Step 4:
+
+```bash
+firewall-cmd --list-all
+```
+
+Step 5:
+
+```bash
+ausearch -m AVC -ts recent
+```
+
+Step 6:
+
+```bash
+curl localhost
+```
+
+## 17. Common Real-World Issues
+
+### HTTP 403
+
+Possible causes:
+- wrong permissions
+- SELinux context
+- missing index file
+
+### Connection refused
+
+Possible causes:
+- service stopped
+- firewall blocked
+- wrong listening address
+
+### Name resolution failure
+
+Possible causes:
+- broken DNS
+- invalid resolv.conf
+- network issue
+
+### Read-only filesystem
+
+Possible causes:
+- filesystem corruption
+- disk issue
+
+## 18. Practice Tasks
+
+1. Stop httpd and troubleshoot.
+2. Break Apache configuration and fix it.
+3. Block HTTP in firewall and restore access.
+4. Create SELinux denial and troubleshoot it.
+5. Break fstab entry and recover system.
+6. Configure broken cron job and repair it.
+7. Troubleshoot DNS resolution.
+8. Verify open ports and services.
