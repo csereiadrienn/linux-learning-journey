@@ -1,1 +1,374 @@
+# Podman and Containers
 
+This file contains Podman and container notes useful for RHCSA and Linux administration.
+
+## 1. What is Podman?
+
+Podman is a container engine used in RHEL-based systems.
+
+Containers are isolated environments used to run applications.
+
+Podman is similar to Docker but:
+- daemonless
+- rootless support
+- better integration with systemd
+- used in RHCSA/RHCE
+
+## 2. Basic Container Concepts
+
+Important terms:
+
+```text
+Image      = template
+Container  = running instance of image
+Registry   = image repository
+```
+
+Flow:
+
+```text
+Image -> Container -> Running Application
+```
+
+## 3. Install Podman
+
+```bash
+dnf install podman -y
+```
+
+Verify:
+
+```bash
+podman --version
+```
+
+## 4. Search Images
+
+Search image:
+
+```bash
+podman search nginx
+```
+
+## 5. Pull Images
+
+Download image:
+
+```bash
+podman pull nginx
+```
+
+View local images:
+
+```bash
+podman images
+```
+
+## 6. Run Containers
+
+Run nginx container:
+
+```bash
+podman run -d nginx
+```
+
+Explanation:
+
+```text
+-d = detached mode
+```
+
+Run container with custom name:
+
+```bash
+podman run -d --name web nginx
+```
+
+## 7. List Containers
+
+Show running containers:
+
+```bash
+podman ps
+```
+
+Show all containers:
+
+```bash
+podman ps -a
+```
+
+## 8. Stop and Remove Containers
+
+Stop container:
+
+```bash
+podman stop web
+```
+
+Start container:
+
+```bash
+podman start web
+```
+
+Restart container:
+
+```bash
+podman restart web
+```
+
+Remove container:
+
+```bash
+podman rm web
+```
+
+Force remove:
+
+```bash
+podman rm -f web
+```
+
+## 9. Container Ports
+
+Expose port:
+
+```bash
+podman run -d -p 8080:80 nginx
+```
+
+Explanation:
+
+```text
+HOST_PORT:CONTAINER_PORT
+```
+
+Verify:
+
+```bash
+ss -tulpn
+```
+
+Access website:
+
+```bash
+curl http://localhost:8080
+```
+
+## 10. Container Logs
+
+View logs:
+
+```bash
+podman logs web
+```
+
+Follow logs:
+
+```bash
+podman logs -f web
+```
+
+## 11. Execute Commands Inside Container
+
+Open shell:
+
+```bash
+podman exec -it web bash
+```
+
+Explanation:
+
+```text
+-i = interactive
+-t = terminal
+```
+
+## 12. Volumes
+
+Mount host directory:
+
+```bash
+podman run -d -v /web:/usr/share/nginx/html nginx
+```
+
+Explanation:
+
+```text
+Host directory is mounted inside container.
+```
+
+## 13. SELinux and Containers
+
+If SELinux blocks volume access:
+
+```bash
+podman run -d -v /web:/usr/share/nginx/html:Z nginx
+```
+
+Explanation:
+
+```text
+:Z adjusts SELinux labels for containers.
+```
+
+## 14. Generate systemd Service
+
+Generate service file:
+
+```bash
+podman generate systemd --name web
+```
+
+Save service:
+
+```bash
+podman generate systemd --name web > /etc/systemd/system/web.service
+```
+
+Reload systemd:
+
+```bash
+systemctl daemon-reload
+```
+
+Enable service:
+
+```bash
+systemctl enable web.service
+```
+
+## 15. Rootless Containers
+
+Run as normal user:
+
+```bash
+podman run -d nginx
+```
+
+Benefits:
+
+- better security
+- no root required
+
+## 16. Remove Images
+
+Remove image:
+
+```bash
+podman rmi nginx
+```
+
+Remove unused data:
+
+```bash
+podman system prune
+```
+
+## 17. Troubleshooting
+
+Check running containers:
+
+```bash
+podman ps
+```
+
+Check logs:
+
+```bash
+podman logs web
+```
+
+Check ports:
+
+```bash
+ss -tulpn
+```
+
+Check firewall:
+
+```bash
+firewall-cmd --list-all
+```
+
+Check SELinux:
+
+```bash
+ausearch -m AVC -ts recent
+```
+
+## 18. Example Troubleshooting
+
+Problem:
+
+```text
+Container website is not accessible.
+```
+
+Check container:
+
+```bash
+podman ps
+```
+
+Check exposed ports:
+
+```bash
+podman ps
+```
+
+Check listening ports:
+
+```bash
+ss -tulpn | grep 8080
+```
+
+Check firewall:
+
+```bash
+firewall-cmd --list-all
+```
+
+Check SELinux:
+
+```bash
+ausearch -m AVC -ts recent
+```
+
+## 19. Important RHCSA Commands
+
+```bash
+podman images
+podman ps
+podman run
+podman stop
+podman rm
+podman logs
+podman exec
+podman pull
+```
+
+## 20. Useful Images
+
+```text
+nginx
+httpd
+alpine
+ubuntu
+mysql
+mariadb
+redis
+```
+
+## Practice Tasks
+
+1. Install Podman.
+2. Pull nginx image.
+3. Run container named `web`.
+4. Expose port 8080.
+5. Access website with curl.
+6. View logs.
+7. Mount custom HTML directory.
+8. Generate systemd service.
+9. Stop and remove container.
