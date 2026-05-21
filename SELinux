@@ -1,1 +1,353 @@
+# SELinux for Hosting Environments
 
+This file contains SELinux notes related to web hosting, Apache, Nginx, reverse proxy and VPS administration.
+
+## 1. What is SELinux?
+
+SELinux stands for:
+
+```text
+Security-Enhanced Linux
+```
+
+It adds an additional security layer on top of Linux permissions.
+
+Even if Linux permissions are correct:
+- SELinux can still block access.
+
+Very common in:
+- RHEL
+- AlmaLinux
+- Rocky Linux
+- CentOS
+
+## 2. SELinux Modes
+
+Check current mode:
+
+```bash
+getenforce
+```
+
+Detailed status:
+
+```bash
+sestatus
+```
+
+Modes:
+
+```text
+Enforcing
+Permissive
+Disabled
+```
+
+### Enforcing
+
+SELinux actively blocks unauthorized actions.
+
+### Permissive
+
+SELinux logs problems but does not block them.
+
+### Disabled
+
+SELinux completely disabled.
+
+## 3. Common Hosting Problems Caused by SELinux
+
+Examples:
+
+- Apache cannot read files
+- Nginx reverse proxy fails
+- Custom ports blocked
+- PHP cannot write uploads
+- Containers cannot access mounted directories
+
+Typical symptoms:
+
+```text
+403 Forbidden
+502 Bad Gateway
+Permission denied
+Connection refused
+```
+
+## 4. View SELinux Contexts
+
+Check contexts:
+
+```bash
+ls -Z
+```
+
+Example:
+
+```text
+system_u:object_r:httpd_sys_content_t:s0
+```
+
+Structure:
+
+```text
+user:role:type:level
+```
+
+Most important:
+
+```text
+TYPE
+```
+
+## 5. HTTPD Contexts
+
+### Read-only web content
+
+```text
+httpd_sys_content_t
+```
+
+Used for:
+- HTML
+- CSS
+- JS
+- static content
+
+### Writable web content
+
+```text
+httpd_sys_rw_content_t
+```
+
+Used for:
+- uploads
+- cache
+- writable directories
+
+## 6. Configure Persistent Contexts
+
+Correct method:
+
+```bash
+semanage fcontext -a -t httpd_sys_content_t "/web(/.*)?"
+```
+
+Apply contexts:
+
+```bash
+restorecon -Rv /web
+```
+
+Verify:
+
+```bash
+ls -Z /web
+```
+
+## 7. Writable Upload Directories
+
+Example:
+
+```bash
+semanage fcontext -a -t httpd_sys_rw_content_t "/uploads(/.*)?"
+```
+
+Apply:
+
+```bash
+restorecon -Rv /uploads
+```
+
+## 8. Temporary Context Changes
+
+Example:
+
+```bash
+chcon -t httpd_sys_content_t index.html
+```
+
+Problem:
+
+```text
+NOT persistent
+```
+
+Changes disappear after:
+- restorecon
+- relabel
+- reboot sometimes
+
+Better solution:
+
+```bash
+semanage fcontext
+```
+
+## 9. SELinux Ports
+
+Check allowed ports:
+
+```bash
+semanage port -l
+```
+
+Check HTTP ports:
+
+```bash
+semanage port -l | grep http
+```
+
+## 10. Add Custom HTTP Port
+
+Example:
+
+```bash
+semanage port -a -t http_port_t -p tcp 8080
+```
+
+Explanation:
+
+```text
+Allows Apache/Nginx to use TCP port 8080.
+```
+
+## 11. Reverse Proxy and SELinux
+
+Common issue:
+- Nginx reverse proxy returns 502
+
+Cause:
+- SELinux blocks outbound network connection
+
+Fix:
+
+```bash
+setsebool -P httpd_can_network_connect on
+```
+
+## 12. Common SELinux Booleans
+
+View booleans:
+
+```bash
+getsebool -a
+```
+
+Search HTTP booleans:
+
+```bash
+getsebool -a | grep http
+```
+
+### Allow network connections
+
+```bash
+setsebool -P httpd_can_network_connect on
+```
+
+### Allow home directories
+
+```bash
+setsebool -P httpd_enable_homedirs on
+```
+
+### Allow NFS access
+
+```bash
+setsebool -P httpd_use_nfs on
+```
+
+## 13. Troubleshooting SELinux
+
+Check AVC denials:
+
+```bash
+ausearch -m AVC -ts recent
+```
+
+Check logs:
+
+```bash
+journalctl -xe
+```
+
+Check contexts:
+
+```bash
+ls -Z
+```
+
+Restore contexts:
+
+```bash
+restorecon -Rv /var/www/html
+```
+
+## 14. Real Example - Apache Cannot Access Website
+
+Problem:
+
+```text
+403 Forbidden
+```
+
+Check contexts:
+
+```bash
+ls -Z /var/www/html
+```
+
+Fix:
+
+```bash
+semanage fcontext -a -t httpd_sys_content_t "/var/www/html(/.*)?"
+```
+
+Apply:
+
+```bash
+restorecon -Rv /var/www/html
+```
+
+## 15. Real Example - Reverse Proxy Fails
+
+Problem:
+
+```text
+502 Bad Gateway
+```
+
+Check SELinux:
+
+```bash
+ausearch -m AVC -ts recent
+```
+
+Fix:
+
+```bash
+setsebool -P httpd_can_network_connect on
+```
+
+## 16. Important Commands
+
+```bash
+getenforce
+sestatus
+ls -Z
+restorecon
+semanage
+setsebool
+getsebool
+ausearch
+```
+
+## 17. Practice Tasks
+
+1. Configure SELinux for custom web directory.
+2. Configure writable uploads directory.
+3. Configure Apache on port 8080.
+4. Configure reverse proxy access.
+5. Trigger SELinux denial and troubleshoot it.
+6. Verify contexts and booleans.
